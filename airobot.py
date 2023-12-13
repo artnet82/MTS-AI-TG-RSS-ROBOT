@@ -1,4 +1,4 @@
- import argparse
+import argparse
 import random
 from configparser import ConfigParser
 from pprint import pprint
