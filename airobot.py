@@ -2,7 +2,6 @@ import argparse
 import random
 from configparser import ConfigParser
 from pprint import pprint
-from typing import Mapping
 import wave
 
 import grpc
@@ -15,8 +14,9 @@ import tts_pb2_grpc
 
 
 def read_api_config(file_name: str = "config.ini") -> ConfigParser:
- 
-
+    """
+    Читает конфигурационный файл и возвращает объект ConfigParser с настройками API.
+    """
     config = ConfigParser()
     config.read(file_name)
 
@@ -24,6 +24,9 @@ def read_api_config(file_name: str = "config.ini") -> ConfigParser:
 
 
 def get_request_metadata(auth_config: Mapping[str, str]) -> list[tuple[str, str]]:
+    """
+    Создает метаданные запроса с помощью модуля KeycloakOpenID для аутентификации и авторизации запроса.
+    """
     sso_connection = KeycloakOpenID(
         auth_config["sso_server_url"],
         auth_config["realm_name"],
@@ -46,6 +49,10 @@ def get_request_metadata(auth_config: Mapping[str, str]) -> list[tuple[str, str]
 
 
 def synthesize_stream(text: str, api_address: str, auth_config: Mapping[str, str]):
+    """
+    Отправляет текстовый запрос на сервер gRPC с настройками синтеза речи
+    и получает аудиоответ в виде потока, сохраняя его в файл 'synthesized_audio.wav'.
+    """
     sample_rate = 22050
     request = tts_pb2.SynthesizeSpeechRequest(
         text=text,
@@ -108,6 +115,9 @@ def synthesize_stream(text: str, api_address: str, auth_config: Mapping[str, str
 
 
 def send_audio_to_telegram(bot_token: str, chat_id: str, audio_file: str):
+    """
+    Отправляет аудиофайл через Telegram, используя бота с указанным токеном и идентификатором чата.
+    """
     bot = Bot(token=bot_token)
     bot.send_audio(chat_id=chat_id, audio=open(audio_file, "rb"))
 
@@ -118,14 +128,20 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # Читаем конфигурацию из файла
     config = read_api_config()
 
+    # ВыполПредлагаю продолжить код с комментариев после строки `config = read_api_config()`:
+
+```python
+    # Выполняем синтез речи и получаем путь к сохраненному аудиофайлу
     audio_file = synthesize_stream(
         args.text,
         config["API"]["server_address"],
         config["Auth"],
     )
 
+    # Отправляем аудиофайл через Telegram
     send_audio_to_telegram(
         config["Telegram"]["bot_token"],
         config["Telegram"]["chat_id"],
