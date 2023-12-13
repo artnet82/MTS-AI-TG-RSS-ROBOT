@@ -1,4 +1,4 @@
-import argparse
+ import argparse
 import random
 from configparser import ConfigParser
 from pprint import pprint
@@ -15,7 +15,7 @@ import tts_pb2_grpc
 
 def read_api_config(file_name: str = "config.ini") -> ConfigParser:
     """
-    Читает конфигурационный файл и возвращает объект ConfigParser с настройками API.
+    Читает конфигурацию API из файла и возвращает объект ConfigParser с настройками API.
     """
     config = ConfigParser()
     config.read(file_name)
@@ -23,7 +23,7 @@ def read_api_config(file_name: str = "config.ini") -> ConfigParser:
     return config
 
 
-def get_request_metadata(auth_config: Mapping[str, str]) -> list[tuple[str, str]]:
+def get_request_metadata(auth_config: dict[str, str]) -> list[tuple[str, str]]:
     """
     Создает метаданные запроса с помощью модуля KeycloakOpenID для аутентификации и авторизации запроса.
     """
@@ -48,7 +48,7 @@ def get_request_metadata(auth_config: Mapping[str, str]) -> list[tuple[str, str]
     return metadata
 
 
-def synthesize_stream(text: str, api_address: str, auth_config: Mapping[str, str]):
+def synthesize_stream(text: str, api_address: str, auth_config: dict[str, str]):
     """
     Отправляет текстовый запрос на сервер gRPC с настройками синтеза речи
     и получает аудиоответ в виде потока, сохраняя его в файл 'synthesized_audio.wav'.
@@ -65,7 +65,7 @@ def synthesize_stream(text: str, api_address: str, auth_config: Mapping[str, str
             voice_style=tts_pb2.VoiceStyle.VOICE_STYLE_NEUTRAL,
         ),
     )
-    print("Prepared request:")
+    print("Подготовленный запрос:")
     pprint(MessageToDict(request))
 
     options = [
@@ -77,7 +77,7 @@ def synthesize_stream(text: str, api_address: str, auth_config: Mapping[str, str
 
     credentials = grpc.ssl_channel_credentials()
 
-    print(f"\nSending request to gRPC server {api_address}")
+    print(f"\nОтправка запроса на gRPC-сервер {api_address}")
 
     with grpc.secure_channel(
         api_address, credentials=credentials, options=options
@@ -92,7 +92,7 @@ def synthesize_stream(text: str, api_address: str, auth_config: Mapping[str, str
             wait_for_ready=True,
         )
 
-        print("Call initial metadata:")
+        print("Метаданные ответа:")
         initial_metadata = dict(response_iterator.initial_metadata())
         print(f"request_id={initial_metadata.get('request_id', '')}")
         print(f"trace_id={initial_metadata.get('external_trace_id', '')}")
@@ -104,12 +104,12 @@ def synthesize_stream(text: str, api_address: str, auth_config: Mapping[str, str
         wave_data.setsampwidth(2)
 
         for idx, chunk in enumerate(response_iterator, 1):
-            print(f"Received chunk #{idx} of {len(chunk.audio)} bytes")
+            print(f"Получен чанк #{idx} размером {len(chunk.audio)} байт")
             wave_data.writeframesraw(chunk.audio)
 
         wave_data.close()
 
-        print(f"Saved received audio to {path}")
+        print(f"Сохранен полученный аудиофайл в {path}")
 
         return path
 
@@ -124,26 +124,8 @@ def send_audio_to_telegram(bot_token: str, chat_id: str, audio_file: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("text", type=str, help="text for speech synthesis")
+    parser.add_argument("text", type=str, help="текст для синтеза речи")
 
     args = parser.parse_args()
 
-    # Читаем конфигурацию из файла
-    config = read_api_config()
-
-    # ВыполПредлагаю продолжить код с комментариев после строки `config = read_api_config()`:
-
-```python
-    # Выполняем синтез речи и получаем путь к сохраненному аудиофайлу
-    audio_file = synthesize_stream(
-        args.text,
-        config["API"]["server_address"],
-        config["Auth"],
-    )
-
-    # Отправляем аудиофайл через Telegram
-    send_audio_to_telegram(
-        config["Telegram"]["bot_token"],
-        config["Telegram"]["chat_id"],
-        audio_file,
-    )
+    
